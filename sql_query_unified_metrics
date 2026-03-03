@@ -1,0 +1,131 @@
+WITH unified AS (
+/* TikTok */
+SELECT
+DATE AS dt,
+'tiktok' AS channel,
+CAMPAIGN_ID AS campaign_id,
+CAMPAIGN_NAME AS campaign_name,
+ADGROUP_ID AS ad_group_id,
+ADGROUP_NAME AS ad_group_name,
+IMPRESSIONS AS impressions,
+CLICKS AS clicks,
+COST AS spend,
+CONVERSIONS AS conversions,
+/* Campos que no existen en TikTok */
+NULL AS conversion_value,
+NULL AS reach,
+NULL AS frequency,
+NULL AS quality_score,
+NULL AS search_impression_share,
+/* Campos específicos de TikTok */
+VIDEO_VIEWS AS video_views,
+VIDEO_WATCH_25 AS video_watch_25,
+VIDEO_WATCH_50 AS video_watch_50,
+VIDEO_WATCH_75 AS video_watch_75,
+VIDEO_WATCH_100 AS video_watch_100,
+LIKES AS likes,
+SHARES AS shares,
+COMMENTS AS comments,
+NULL AS engagement_rate
+FROM `united-triode-485323-h2.social_media_exercise.tiktok_ads`
+
+UNION ALL
+/* Google Ads */
+SELECT
+DATE AS dt,
+'google' AS channel,
+CAMPAIGN_ID AS campaign_id,
+
+CAMPAIGN_NAME AS campaign_name,
+AD_GROUP_ID AS ad_group_id,
+AD_GROUP_NAME AS ad_group_name,
+IMPRESSIONS AS impressions,
+CLICKS AS clicks,
+COST AS spend,
+CONVERSIONS AS conversions,
+CONVERSION_VALUE AS conversion_value,
+NULL AS reach,
+NULL AS frequency,
+QUALITY_SCORE AS quality_score,
+SEARCH_IMPRESSION_SHARE AS search_impression_share, -- % que aparezca tu anuncio
+/* Google no tiene estos campos */
+NULL AS video_views,
+NULL AS video_watch_25,
+NULL AS video_watch_50,
+NULL AS video_watch_75,
+NULL AS video_watch_100,
+NULL AS likes,
+NULL AS shares,
+NULL AS comments,
+NULL AS engagement_rate
+FROM `united-triode-485323-h2.social_media_exercise.google_ads`
+
+UNION ALL
+/* Facebook/META */
+SELECT
+DATE AS dt,
+'facebook' AS channel,
+CAMPAIGN_ID AS campaign_id,
+CAMPAIGN_NAME AS campaign_name,
+AD_SET_ID AS ad_group_id,
+AD_SET_NAME AS ad_group_name,
+IMPRESSIONS AS impressions,
+CLICKS AS clicks,
+SPEND AS spend,
+CONVERSIONS AS conversions,
+NULL AS conversion_value,
+REACH AS reach,
+
+FREQUENCY AS frequency, --cuanto sale a un usuario (>5 está desgastado)
+NULL AS quality_score,
+NULL AS search_impression_share,
+VIDEO_VIEWS AS video_views,
+NULL AS video_watch_25,
+NULL AS video_watch_50,
+NULL AS video_watch_75,
+NULL AS video_watch_100,
+NULL AS likes,
+NULL AS shares,
+NULL AS comments,
+ENGAGEMENT_RATE AS engagement_rate
+FROM `united-triode-485323-h2.social_media_exercise.facebook_ads`
+),
+metrics AS (
+SELECT
+dt,
+channel,
+campaign_id,
+campaign_name,
+ad_group_id,
+ad_group_name,
+impressions,
+clicks,
+spend,
+conversions,
+/* Métricas */
+CASE WHEN impressions > 0 THEN clicks * 1.0 / impressions ELSE NULL END AS ctr,
+CASE WHEN clicks > 0 THEN spend * 1.0 / clicks ELSE NULL END AS cpc,
+CASE WHEN conversions > 0 THEN spend * 1.0 / conversions ELSE NULL END AS cpa,
+CASE WHEN clicks > 0 THEN conversions * 1.0 / clicks ELSE NULL END AS cvr,
+CASE WHEN impressions > 0 THEN (spend * 1.0 / impressions) * 1000 ELSE NULL END
+AS cpm,
+/* Meta / Google / TikTok extras para análisis por canal */
+conversion_value,
+reach,
+frequency,
+quality_score,
+search_impression_share,
+video_views,
+video_watch_25,
+
+video_watch_50,
+video_watch_75,
+video_watch_100,
+likes,
+shares,
+comments,
+engagement_rate
+FROM unified
+)
+SELECT *
+FROM metrics;
